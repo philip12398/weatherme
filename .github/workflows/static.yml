@@ -1,0 +1,772 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy static content to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: '.'
+          <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Weather Lookup App</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2563eb" id="meta-theme-color" />
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --card: #fff;
+      --radius: 10px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.05);
+      --accent: #2563eb;
+      --text: #1f2d3a;
+      --muted: #555;
+      --radius-sm: 6px;
+      --surface: #fff;
+    }
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1f233f;
+      --accent: #6366f1;
+      --text: #e7e9ff;
+      --muted: #a1a9d3;
+      --surface: #1c274f;
+    }
+    *{box-sizing:border-box;}
+    body {
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      background: var(--bg);
+      margin:0;
+      padding:1rem;
+      max-width: 760px;
+      margin-left:auto;
+      margin-right:auto;
+      color: var(--text);
+      transition: background .25s ease, color .25s ease;
+    }
+    h1 { font-size:1.9rem; margin:0; }
+    .sub { margin-top:4px; font-size:0.9rem; color: var(--muted); }
+    .card {
+      background: var(--card);
+      padding:1rem 1.25rem;
+      border-radius: var(--radius);
+      margin-top:1rem;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .controls {
+      display:flex;
+      flex-wrap:wrap;
+      gap:1rem;
+      align-items:flex-start;
+    }
+    .field {
+      flex:1 1 220px;
+      position:relative;
+    }
+    label { display:block; font-weight:600; margin-bottom:4px; }
+    input[type=text] {
+      width:100%;
+      padding:0.55rem 0.75rem;
+      font-size:1rem;
+      border-radius:6px;
+      border:1px solid rgba(0,0,0,0.1);
+      background: white;
+    }
+    button {
+      padding:0.55rem 1rem;
+      font-size:1rem;
+      border:none;
+      background: var(--accent);
+      color:#fff;
+      border-radius:6px;
+      cursor:pointer;
+      transition: filter .2s ease;
+    }
+    button:hover { filter:brightness(1.05); }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    .unit-btn {
+      background:#e2e8f0;
+      color: var(--text);
+      border-radius:6px;
+      border:1px solid #cbd5e1;
+      cursor:pointer;
+      padding:6px 12px;
+      font-size:0.9rem;
+    }
+    .active-unit {
+      background: var(--accent);
+      color:#fff;
+      border:1px solid #1f4ed8;
+    }
+    .toggle-theme {
+      position:absolute;
+      top:12px;
+      right:12px;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding:6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:0.9rem;
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      color: var(--text);
+    }
+    .dropdown {
+      position:absolute;
+      top:100%;
+      left:0;
+      right:0;
+      background: var(--surface);
+      border:1px solid rgba(0,0,0,0.1);
+      border-radius:6px;
+      margin-top:4px;
+      z-index:10;
+      max-height:220px;
+      overflow:auto;
+    }
+    .dropdown-item {
+      padding:0.5rem 0.75rem;
+      cursor:pointer;
+    }
+    .dropdown-item:hover, .dropdown-item[aria-selected="true"] {
+      background: rgba(37,99,235,0.1);
+    }
+    .status {
+      margin-top:8px;
+      font-style:italic;
+    }
+    .error {
+      background:#ffe3e3;
+      padding:0.75rem;
+      border-radius:6px;
+      color:#922;
+      margin-top:8px;
+    }
+    .weather-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:1rem;
+    }
+    .current, .forecast {
+      flex:1 1 300px;
+    }
+    .badge {
+      display:inline-block;
+      padding:4px 10px;
+      background:rgba(37,99,235,0.1);
+      border-radius:999px;
+      font-size:0.75rem;
+      margin-top:4px;
+    }
+    .forecast-grid {
+      display:flex;
+      gap:0.75rem;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .day {
+      flex:1 1 100px;
+      background: rgba(0,0,0,0.025);
+      padding:0.65rem;
+      border-radius:6px;
+      text-align:center;
+      font-size:0.85rem;
+    }
+    .small { font-size:0.8rem; color: var(--muted); }
+    .share {
+      margin-top:6px;
+      font-size:0.75rem;
+    }
+    .icon-svg {
+      width:28px;
+      height:28px;
+      vertical-align:middle;
+    }
+    .hourly {
+      margin-top:12px;
+      overflow-x:auto;
+    }
+    .hourly-grid {
+      display:flex;
+      gap:6px;
+      padding-bottom:4px;
+    }
+    .hour-card {
+      background: rgba(0,0,0,0.02);
+      border-radius:6px;
+      padding:8px;
+      min-width:80px;
+      flex:0 0 auto;
+      text-align:center;
+      font-size:0.7rem;
+    }
+    code { background: rgba(0,0,0,0.05); padding:2px 4px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <div class="card" aria-label="Header and controls">
+    <button id="themeToggle" class="toggle-theme" aria-label="Toggle theme">🌙 Dark</button>
+    <h1>Weather Lookup App</h1>
+    <p class="sub">Autocomplete city, units, location fallback, 7-day + hourly, installable PWA.</p>
+
+    <div class="controls">
+      <div class="field" style="flex:2 1 240px;">
+        <label for="cityInput">City name</label>
+        <input id="cityInput" type="text" placeholder="e.g., Brussels" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" autocomplete="off" />
+        <div id="autocomplete" class="dropdown" role="listbox" style="display:none;"></div>
+      </div>
+      <div class="field" style="flex:1 1 140px;">
+        <label>Units</label>
+        <div style="display:inline-flex; gap:6px;">
+          <button id="metricBtn" class="unit-btn">Metric</button>
+          <button id="imperialBtn" class="unit-btn">Imperial</button>
+        </div>
+        <div class="small">Temperature & wind.</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:flex-end;">
+        <div>
+          <label>&nbsp;</label>
+          <button id="fetchBtn">Get Weather</button>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="locBtn" style="background:#10b981;">Use my location</button>
+        </div>
+      </div>
+    </div>
+    <div id="status" class="status" aria-live="polite" style="display:none;"></div>
+    <div id="error" class="error" style="display:none;"></div>
+  </div>
+
+  <div id="result" style="display:none;">
+    <div class="card" aria-label="Weather result">
+      <div class="weather-row">
+        <div class="current">
+          <h2 id="placeTitle" style="margin:4px 0;">Weather</h2>
+          <div class="small" id="asOf"></div>
+          <div style="margin-top:8px; display:flex; gap:1rem; flex-wrap:wrap;">
+            <div style="flex:1 1 150px; display:flex; gap:8px; align-items:center;">
+              <div id="currentIcon" aria-hidden="true"></div>
+              <div>
+                <div><strong id="tempMain">--°</strong> <span id="unitLabelTemp" class="small">(°C)</span></div>
+                <div id="descMain" class="small">--</div>
+              </div>
+            </div>
+            <div style="flex:1 1 140px;">
+              <div><strong>Wind:</strong> <span id="windVal">--</span> <span id="unitLabelWind">(km/h)</span></div>
+            </div>
+          </div>
+
+          <div class="hourly">
+            <div><strong>Next 12 Hours</strong></div>
+            <div class="hourly-grid" id="hourlyGrid">
+              <!-- inserted hourly cards -->
+            </div>
+          </div>
+
+          <div class="share">
+            Shareable link: <code id="shareURL" style="user-select:all;"></code>
+          </div>
+        </div>
+        <div class="forecast">
+          <div><strong>7-Day Forecast</strong></div>
+          <div class="forecast-grid" id="forecastGrid">
+            <!-- days injected here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="small" style="margin-top:12px; text-align:center;">
+    Data from Open-Meteo (geocoding, reverse geocoding, weather). Works offline-ish after first load if installed as PWA.
+  </div>
+
+  <script>
+    // ---------- Icons as small SVGs ----------
+    const svgIcons = {
+      clear: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M17.36 17.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M17.36 6.64l1.42-1.42"/></svg>`,
+      partly_cloudy: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15a4 4 0 0 1 4-4h1"/><path d="M17 11a4 4 0 0 0-4-4h-1"/><circle cx="12" cy="12" r="3"/><path d="M5 18h14"/></svg>`,
+      cloud: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15a4 4 0 0 1 4-4h9a4 4 0 1 1 0 8H7a4 4 0 0 1-4-4z"/></svg>`,
+      rain: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15a4 4 0 0 1 4-4h9a4 4 0 1 1 0 8H7a4 4 0 0 1-4-4z"/><path d="M8 19l0 2M12 19l0 2M16 19l0 2"/></svg>`,
+      thunder: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+      snow: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2M12 19v2M5.64 5.64l1.42 1.42M16.94 16.94l1.42 1.42M3 12h2M19 12h2M5.64 18.36l1.42-1.42M16.94 7.06l1.42-1.42"/><circle cx="12" cy="12" r="3"/></svg>`,
+      fog: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17h16M4 13h16M4 9h16"/></svg>`,
+      unknown: `<svg aria-hidden="true" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01M12 12a2 2 0 1 1-2-2"/></svg>`
+    };
+
+    // Open-Meteo weathercode mapping to description + approximate icon key
+    const weatherCodeMap = {
+      0: { text: "Clear sky", icon: "clear" },
+      1: { text: "Mainly clear", icon: "partly_cloudy" },
+      2: { text: "Partly cloudy", icon: "partly_cloudy" },
+      3: { text: "Overcast", icon: "cloud" },
+      45: { text: "Fog", icon: "fog" },
+      48: { text: "Depositing rime fog", icon: "fog" },
+      51: { text: "Light drizzle", icon: "rain" },
+      53: { text: "Moderate drizzle", icon: "rain" },
+      55: { text: "Dense drizzle", icon: "rain" },
+      56: { text: "Light freezing drizzle", icon: "rain" },
+      57: { text: "Dense freezing drizzle", icon: "rain" },
+      61: { text: "Slight rain", icon: "rain" },
+      63: { text: "Moderate rain", icon: "rain" },
+      65: { text: "Heavy rain", icon: "rain" },
+      66: { text: "Light freezing rain", icon: "rain" },
+      67: { text: "Heavy freezing rain", icon: "rain" },
+      71: { text: "Slight snow fall", icon: "snow" },
+      73: { text: "Moderate snow fall", icon: "snow" },
+      75: { text: "Heavy snow fall", icon: "snow" },
+      77: { text: "Snow grains", icon: "snow" },
+      80: { text: "Slight rain showers", icon: "rain" },
+      81: { text: "Moderate rain showers", icon: "rain" },
+      82: { text: "Violent rain showers", icon: "thunder" },
+      85: { text: "Slight snow showers", icon: "snow" },
+      86: { text: "Heavy snow showers", icon: "snow" },
+      95: { text: "Thunderstorm", icon: "thunder" },
+      96: { text: "Thunderstorm with slight hail", icon: "thunder" },
+      99: { text: "Thunderstorm with heavy hail", icon: "thunder" },
+    };
+
+    // State
+    let unit = "metric"; // "imperial" possible
+    let debounceTimer = null;
+    let activeSuggestionIndex = -1;
+    let currentSuggestions = [];
+
+    // Elements
+    const cityInput = document.getElementById("cityInput");
+    const fetchBtn = document.getElementById("fetchBtn");
+    const locBtn = document.getElementById("locBtn");
+    const statusEl = document.getElementById("status");
+    const errorEl = document.getElementById("error");
+    const resultEl = document.getElementById("result");
+    const placeTitle = document.getElementById("placeTitle");
+    const asOf = document.getElementById("asOf");
+    const tempMain = document.getElementById("tempMain");
+    const descMain = document.getElementById("descMain");
+    const windVal = document.getElementById("windVal");
+    const currentIcon = document.getElementById("currentIcon");
+    const forecastGrid = document.getElementById("forecastGrid");
+    const hourlyGrid = document.getElementById("hourlyGrid");
+    const shareURL = document.getElementById("shareURL");
+    const metricBtn = document.getElementById("metricBtn");
+    const imperialBtn = document.getElementById("imperialBtn");
+    const autocompleteBox = document.getElementById("autocomplete");
+    const themeToggle = document.getElementById("themeToggle");
+
+    // ---------- Theme handling ----------
+    function applyTheme(t) {
+      document.documentElement.setAttribute("data-theme", t);
+      localStorage.setItem("theme", t);
+      themeToggle.textContent = t === "dark" ? "☀️ Light" : "🌙 Dark";
+      // adjust meta theme-color
+      document.getElementById("meta-theme-color").setAttribute("content", t === "dark" ? "#1f233f" : "#2563eb");
+    }
+    function initTheme() {
+      const stored = localStorage.getItem("theme");
+      if (stored === "dark" || stored === "light") {
+        applyTheme(stored);
+      } else {
+        const prefers = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        applyTheme(prefers);
+      }
+    }
+    themeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+
+    // ---------- Utility ----------
+    function showStatus(msg) {
+      statusEl.textContent = msg;
+      statusEl.style.display = "block";
+    }
+    function hideStatus() { statusEl.style.display = "none"; }
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = "block";
+      resultEl.style.display = "none";
+    }
+    function clearError() { errorEl.style.display = "none"; }
+    function celsiusToF(c) { return c * 9/5 + 32; }
+    function kmhToMph(k) { return k * 0.621371; }
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    }
+    function formatHour(iso) {
+      const d = new Date(iso);
+      return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    }
+    function updateURLParams(city, unit) {
+      const params = new URLSearchParams(window.location.search);
+      if (city) params.set("city", city);
+      params.set("units", unit);
+      const newUrl = `${location.pathname}?${params.toString()}`;
+      history.replaceState(null, "", newUrl);
+      shareURL.textContent = window.location.href;
+    }
+
+    function setUnitButtons() {
+      if (unit === "metric") {
+        metricBtn.classList.add("active-unit");
+        imperialBtn.classList.remove("active-unit");
+      } else {
+        imperialBtn.classList.add("active-unit");
+        metricBtn.classList.remove("active-unit");
+      }
+      document.getElementById("unitLabelTemp").textContent = unit === "metric" ? "(°C)" : "(°F)";
+      document.getElementById("unitLabelWind").textContent = unit === "metric" ? "(km/h)" : "(mph)";
+    }
+
+    function debounce(fn, delay=400) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(fn, delay);
+    }
+
+    function populateAutocomplete(list) {
+      currentSuggestions = list;
+      activeSuggestionIndex = -1;
+      if (!list || list.length === 0) {
+        autocompleteBox.style.display = "none";
+        cityInput.setAttribute("aria-expanded", "false");
+        return;
+      }
+      autocompleteBox.innerHTML = "";
+      list.slice(0,6).forEach((place, idx) => {
+        const div = document.createElement("div");
+        div.className = "dropdown-item";
+        div.setAttribute("role","option");
+        div.textContent = `${place.name}${place.admin1 ? ", " + place.admin1 : ""}, ${place.country}`;
+        div.addEventListener("click", () => {
+          cityInput.value = place.name;
+          autocompleteBox.style.display = "none";
+          cityInput.setAttribute("aria-expanded", "false");
+        });
+        autocompleteBox.appendChild(div);
+      });
+      autocompleteBox.style.display = "block";
+      cityInput.setAttribute("aria-expanded", "true");
+    }
+
+    function hideAutocomplete() {
+      autocompleteBox.style.display = "none";
+      cityInput.setAttribute("aria-expanded", "false");
+    }
+
+    // ---------- Core fetching ----------
+    async function fetchWeatherForCoords(lat, lon, placeName, country) {
+      try {
+        clearError();
+        showStatus("Fetching weather…");
+        // Build the API with both daily and hourly including precipitation probability and weathercode
+        const weatherUrl = [
+          "https://api.open-meteo.com/v1/forecast",
+          `?latitude=${lat}`,
+          `&longitude=${lon}`,
+          "&current_weather=true",
+          "&daily=temperature_2m_max,temperature_2m_min,weathercode",
+          "&hourly=temperature_2m,precipitation_probability,weathercode",
+          "&timezone=auto",
+          "&forecast_days=7"
+        ].join("");
+        const resp = await fetch(weatherUrl);
+        if (!resp.ok) throw new Error("Weather API failed.");
+        const data = await resp.json();
+        const current = data.current_weather;
+        if (!current) throw new Error("No current weather available.");
+
+        // Title
+        placeTitle.textContent = `${placeName}${country ? ", " + country : ""}`;
+        asOf.textContent = `As of ${new Date(current.time).toLocaleString(undefined,{ hour:'2-digit', minute:'2-digit', day:'numeric', month:'short' })}`;
+
+        // Temperature + wind conversions
+        let tempDisplay = current.temperature;
+        let windDisplay = current.windspeed;
+        if (unit === "imperial") {
+          tempDisplay = celsiusToF(tempDisplay);
+          windDisplay = kmhToMph(windDisplay);
+        }
+        tempMain.textContent = `${tempDisplay.toFixed(1)}°`;
+        windVal.textContent = `${windDisplay.toFixed(1)}`;
+
+        // Weather description + icon
+        const code = current.weathercode;
+        const mapping = weatherCodeMap[code] || { text: "Unknown", icon: "unknown" };
+        descMain.textContent = mapping.text;
+        currentIcon.innerHTML = svgIcons[mapping.icon] || svgIcons.unknown;
+
+        // Hourly - next 12 hours (from now)
+        hourlyGrid.innerHTML = "";
+        if (data.hourly && data.hourly.time) {
+          const now = new Date();
+          const times = data.hourly.time;
+          for (let i = 0; i < times.length; i++) {
+            const dt = new Date(times[i]);
+            if (dt < now) continue;
+            const hoursAhead = (dt - now) / (1000 * 60 * 60);
+            if (hoursAhead > 12) break; // limit to next 12h
+            let tempH = data.hourly.temperature_2m[i];
+            let precip = data.hourly.precipitation_probability[i];
+            const codeH = data.hourly.weathercode[i];
+            if (unit === "imperial") tempH = celsiusToF(tempH);
+            const iconKey = (weatherCodeMap[codeH] || { icon: "unknown" }).icon;
+            const card = document.createElement("div");
+            card.className = "hour-card";
+            card.innerHTML = `
+              <div><strong>${formatHour(times[i])}</strong></div>
+              <div style="margin:4px 0;">${svgIcons[iconKey] || svgIcons.unknown}</div>
+              <div>${tempH.toFixed(0)}°</div>
+              <div class="small">Precip: ${precip.toFixed(0)}%</div>
+            `;
+            hourlyGrid.appendChild(card);
+          }
+        }
+
+        // 7-day forecast (use daily weathercode for better icon)
+        forecastGrid.innerHTML = "";
+        const daily = data.daily;
+        if (daily && daily.time) {
+          for (let i = 0; i < daily.time.length; i++) {
+            let hi = daily.temperature_2m_max[i];
+            let lo = daily.temperature_2m_min[i];
+            if (unit === "imperial") {
+              hi = celsiusToF(hi);
+              lo = celsiusToF(lo);
+            }
+            const codeDaily = daily.weathercode ? daily.weathercode[i] : code;
+            const iconKey = (weatherCodeMap[codeDaily] || { icon: "unknown" }).icon;
+            const dayDiv = document.createElement("div");
+            dayDiv.className = "day";
+            dayDiv.innerHTML = `
+              <div><strong>${formatDate(daily.time[i])}</strong></div>
+              <div style="margin:6px 0;">${svgIcons[iconKey] || svgIcons.unknown}</div>
+              <div>H: ${hi.toFixed(0)}°</div>
+              <div>L: ${lo.toFixed(0)}°</div>
+            `;
+            forecastGrid.appendChild(dayDiv);
+          }
+        }
+
+        // Update shareable URL
+        updateURLParams(placeName, unit);
+
+        resultEl.style.display = "block";
+      } catch (err) {
+        showError("Error: " + (err.message || "Failed to get weather."));
+      } finally {
+        hideStatus();
+      }
+    }
+
+    async function geocodeCityAndFetch(cityName) {
+      if (!cityName) {
+        showError("Please enter a city.");
+        return;
+      }
+      try {
+        clearError();
+        showStatus("Looking up city…");
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1`;
+        const resp = await fetch(geoUrl);
+        if (!resp.ok) throw new Error("Geocoding failed.");
+        const data = await resp.json();
+        if (!data.results || data.results.length === 0) {
+          showError("City not found. Try another name.");
+          return;
+        }
+        const place = data.results[0];
+        const { latitude, longitude, name, country } = place;
+        await fetchWeatherForCoords(latitude, longitude, name, country);
+      } catch (err) {
+        showError("Error: " + (err.message || "Failed to get city.") );
+      } finally {
+        hideStatus();
+      }
+    }
+
+    async function useLocation() {
+      if (!navigator.geolocation) {
+        showError("Geolocation not supported.");
+        return;
+      }
+      try {
+        clearError();
+        showStatus("Requesting your location…");
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          showStatus("Resolving location name…");
+          let placeName = "Your location";
+          let country = "";
+          try {
+            const revUrl = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&count=1`;
+            const resp = await fetch(revUrl);
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data.results && data.results.length) {
+                const p = data.results[0];
+                placeName = p.name;
+                country = p.country;
+              }
+            }
+          } catch {}
+          await fetchWeatherForCoords(lat, lon, placeName, country);
+        }, (err) => {
+          showError("Location permission denied or unavailable.");
+          hideStatus();
+        }, { enableHighAccuracy: true, timeout: 10000 });
+      } catch (err) {
+        showError("Failed to get location.");
+        hideStatus();
+      }
+    }
+
+    async function fetchSuggestions(query) {
+      if (!query || query.trim().length === 0) {
+        populateAutocomplete([]);
+        return;
+      }
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=6`;
+        const resp = await fetch(url);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.results) populateAutocomplete(data.results);
+        else populateAutocomplete([]);
+      } catch {
+        populateAutocomplete([]);
+      }
+    }
+
+    // ---------- Event listeners ----------
+    fetchBtn.addEventListener("click", () => {
+      hideAutocomplete();
+      const city = cityInput.value.trim();
+      geocodeCityAndFetch(city);
+    });
+
+    locBtn.addEventListener("click", () => {
+      hideAutocomplete();
+      useLocation();
+    });
+
+    cityInput.addEventListener("input", (e) => {
+      clearError();
+      debounce(() => fetchSuggestions(e.target.value), 300);
+    });
+
+    cityInput.addEventListener("keydown", (e) => {
+      const items = Array.from(autocompleteBox.querySelectorAll(".dropdown-item"));
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (!items.length) return;
+        activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+        items.forEach((it, i) => it.setAttribute("aria-selected", i === activeSuggestionIndex));
+        items[activeSuggestionIndex].scrollIntoView({block:"nearest"});
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (!items.length) return;
+        activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+        items.forEach((it, i) => it.setAttribute("aria-selected", i === activeSuggestionIndex));
+        items[activeSuggestionIndex].scrollIntoView({block:"nearest"});
+      } else if (e.key === "Enter") {
+        if (activeSuggestionIndex >= 0 && items[activeSuggestionIndex]) {
+          e.preventDefault();
+          items[activeSuggestionIndex].click();
+        } else {
+          fetchBtn.click();
+        }
+      } else if (e.key === "Escape") {
+        hideAutocomplete();
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!autocompleteBox.contains(e.target) && e.target !== cityInput) {
+        hideAutocomplete();
+      }
+    });
+
+    metricBtn.addEventListener("click", () => {
+      unit = "metric";
+      setUnitButtons();
+      const city = new URLSearchParams(window.location.search).get("city") || cityInput.value.trim();
+      if (city) geocodeCityAndFetch(city);
+    });
+
+    imperialBtn.addEventListener("click", () => {
+      unit = "imperial";
+      setUnitButtons();
+      const city = new URLSearchParams(window.location.search).get("city") || cityInput.value.trim();
+      if (city) geocodeCityAndFetch(city);
+    });
+
+    // ---------- Initialization ----------
+    function initFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const city = params.get("city");
+      const u = params.get("units");
+      if (u === "imperial" || u === "metric") unit = u;
+      setUnitButtons();
+      if (city) {
+        cityInput.value = city;
+        geocodeCityAndFetch(city);
+      }
+    }
+
+    initTheme();
+    setUnitButtons();
+    initFromURL();
+
+    // ---------- PWA service worker registration ----------
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(()=> {
+        // swallow; optional
+      });
+    }
+  </script>
+</body>
+</html>
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
